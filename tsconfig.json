@@ -12,7 +12,7 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "types": [
-      "vitest/globals"
+      "vitest/globals" , "node"
     ]
   },
   "include": [
