@@ -1,0 +1,170 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+model User {
+  id                String              @id @default(uuid())
+  first_name        String
+  last_name         String
+  username          String              @unique
+  email             String              @unique
+  role              UserRole            @default(USER)
+  hashed_password   String
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  payments          Payments[]
+  userSubscriptions UserSubscriptions[]
+  urls              Url[]
+
+  @@index([id, email, username])
+  @@map("users")
+}
+
+model Url {
+  id         Int      @id @default(autoincrement())
+  short_code String   @unique @db.VarChar(7)
+  long_url   String   @db.VarChar(1024)
+  createdBy  String?
+  guestId    String?
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  author    User?       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  // guestId User? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  analytics Analytics[]
+
+  @@index([id, short_code, createdBy])
+  @@map("urls")
+}
+
+enum BillingInterval {
+  MONTHLY
+  WEEKLY
+  ANNUALLY
+}
+
+model Plans {
+  id                 Int             @id
+  name               String          @unique
+  code               String          @unique
+  desciption         String          @db.Text
+  amount             Int // cents
+  interval           BillingInterval @default(MONTHLY)
+  maxUrls            Int
+  customAlias        Boolean
+  analyticsRetention Int // days 
+  features           String[]
+  is_active          Boolean
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+  payments           Payments[]
+
+  @@index([id, code])
+  @@map("plans")
+}
+
+model Analytics {
+  id          String   @id @default(uuid())
+  shortCode   String
+  clickedAt   DateTime
+  ipAddress   String
+  userAgent   String   @db.Text
+  device      String
+  countryCode String
+  referer     String   @db.VarChar(2048)
+
+  urlAnalytics Url? @relation(fields: [shortCode], references: [short_code], onDelete: Cascade)
+
+  @@index([id, shortCode])
+  @@map("url_analytics")
+}
+
+enum PaymentStatus {
+  CREATED
+  SUCESSFULL
+  FAILED
+  REJCTED
+}
+
+model Payments {
+  id                String        @id @default(uuid())
+  userId            String
+  planId            Int
+  subscriptionId    String
+  amount            Int // cents 
+  status            PaymentStatus @default(CREATED)
+  razorpayOrderID   String
+  razorpayPaymentID String
+  razorpaySignature String
+  errorCode         String?
+  errorDescription  String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  userPayments   User  @relation(fields: [userId], references: [id])
+  planIdPayments Plans @relation(fields: [planId], references: [id])
+
+  @@index([id, razorpayOrderID, razorpayPaymentID])
+  @@map("payments")
+}
+
+enum WebhookStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+model WebhookEvents {
+  id        String        @id @default(uuid())
+  eventId   String
+  eventType String
+  status    WebhookStatus @default(PENDING)
+  payload   String[]      @default([])
+  errorLog  String?       @db.Text
+
+  createdAt   DateTime @default(now())
+  processedAt DateTime @updatedAt
+
+  @@index([id])
+  @@map("webhook_events")
+}
+
+enum SubscriptionStatus {
+  HOLD
+  ACTIVE
+  CREATED
+  INACTIVE
+}
+
+model UserSubscriptions {
+  id                     String             @id @default(uuid())
+  userId                 String
+  status                 SubscriptionStatus @default(CREATED)
+  razorpaySubscriptionID String?
+  razorpayCustomerID     String?
+  currentPeriodStart     DateTime
+  currentPeriodEnd       DateTime
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  userSubscription User @relation(fields: [userId], references: [id])
+
+  @@index([id])
+  @@map("subscriptions")
+}
