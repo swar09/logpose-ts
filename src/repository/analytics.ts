@@ -40,7 +40,6 @@ export class AnalyticsRepository {
         const start = startTime;
         const end = endTime ?? new Date();
         return this.db.analytics.findMany({
-            // where shortCode == arg 
             where: {
                 clickedAt: {
                     gte: start,
@@ -50,15 +49,9 @@ export class AnalyticsRepository {
             },
             skip: (page - 1) * pageSize,
             take: pageSize,
-            // how to order output
             orderBy: {
                 clickedAt: 'desc'
             }
         });
     }
-
-    
-
-
-
 }

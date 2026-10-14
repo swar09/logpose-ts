@@ -2,6 +2,9 @@ import { Prisma, Url } from "../generated/prisma/client";
 import { BatchPayload } from "../generated/prisma/internal/prismaNamespace";
 import { UrlCreateManyArgs, UrlDeleteManyArgs } from "../generated/prisma/models";
 
+export type UrlWithoutId = Omit<Url, "id">;
+export type SafeUrl = UrlWithoutId;
+
 export class UrlsRepository {
     private readonly db: Prisma.TransactionClient;
 
@@ -9,9 +12,10 @@ export class UrlsRepository {
         this.db = db;
     }
 
-    async create(urlPayload: Url): Promise<Url> {
+    async create(urlPayload: Prisma.UrlCreateInput | Prisma.UrlUncheckedCreateInput): Promise<UrlWithoutId> {
         return this.db.url.create({
-            data: urlPayload
+            data: urlPayload,
+            omit: { id: true },
         });
     }
 
@@ -20,7 +24,16 @@ export class UrlsRepository {
     }
 
     async deleteById(id: number): Promise<Url> {
-        return this.db.url.delete({ where: { id } });
+        return this.db.url.delete({
+            where: { id },
+        });
+    }
+
+    async deleteByShortCode(shortCode: string): Promise<UrlWithoutId> {
+        return this.db.url.delete({
+            where: { short_code: shortCode },
+            omit: { id: true },
+        });
     }
 
     async deleteManyById(arg: UrlDeleteManyArgs): Promise<BatchPayload> {
@@ -33,22 +46,83 @@ export class UrlsRepository {
             select: { long_url: true },
         });
     }
+
     async getShortCodeById(id: number): Promise<{ short_code: string } | null> {
         return this.db.url.findUnique({
             where: { id },
             select: { short_code: true },
         });
     }
-    async getById(id: number, author: string): Promise<Url | null> {
-        return this.db.url.findUnique({
+
+    async getByAuthorId(authorId: string): Promise<UrlWithoutId | null> {
+        return this.db.url.findFirst({
             where: {
-                id, OR: [
-                    { createdBy: author },
-                    { guestId: author }
-                ]
+                OR: [
+                    { createdBy: authorId },
+                    { guestId: authorId },
+                ],
+            },
+            omit: { id: true },
+        });
+    }
+
+    async modifyById(id: number, data: Prisma.UrlUpdateInput | Prisma.UrlUncheckedUpdateInput): Promise<Url> {
+        return this.db.url.update({
+            where: { id },
+            data,
+        });
+    }
+
+    async updateShortCodeById(id: number, shortCode: string): Promise<{ short_code: string; long_url: string }> {
+        return this.db.url.update({
+            where: { id },
+            data: { short_code: shortCode },
+            select: {
+                short_code: true,
+                long_url: true,
             },
         });
     }
 
+    async updateShortCodeByShortCode(currentShortCode: string, newShortCode: string): Promise<{ short_code: string; long_url: string }> {
+        return this.db.url.update({
+            where: { short_code: currentShortCode },
+            data: { short_code: newShortCode },
+            select: {
+                short_code: true,
+                long_url: true,
+            },
+        });
+    }
 
+    async getUrlsByUserId(userId: string, page: number = 1, pageSize: number = 20): Promise<UrlWithoutId[]> {
+        return this.db.url.findMany({
+            where: { createdBy: userId },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            orderBy: {
+                createdAt: "desc",
+            },
+            omit: { id: true },
+        });
+    }
+
+    async getUrlsByGuestId(guestId: string, page: number = 1, pageSize: number = 20): Promise<UrlWithoutId[]> {
+        return this.db.url.findMany({
+            where: { guestId },
+            skip: (page - 1) * pageSize,
+            take: pageSize,
+            orderBy: {
+                createdAt: "desc",
+            },
+            omit: { id: true },
+        });
+    }
+
+    async getByShortCode(shortCode: string): Promise<UrlWithoutId | null> {
+        return this.db.url.findUnique({
+            where: { short_code: shortCode },
+            omit: { id: true },
+        });
+    }
 }
