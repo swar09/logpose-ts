@@ -3,13 +3,13 @@ import { DatabaseId } from "../models/urls";
 import { FF1 } from "ff1-js";
 
 export class BaseConversion {
-    private key: Buffer | string;
-    private tweak: Buffer | string;
-    private radix: number;
-    private alphabet: string;
-    private minLength?: number;
-    private maxLength?: number;
-    private fpeClient: FF1;
+    #key: Buffer | string;
+    #tweak: Buffer | string;
+    #radix: number;
+    #alphabet: string;
+    #minLength?: number;
+    #maxLength?: number;
+    #fpeClient: FF1;
 
     constructor(
         key: Buffer | string,
@@ -19,43 +19,43 @@ export class BaseConversion {
         minLength?: number,
         maxLength?: number
     ) {
-        this.key = key;
-        this.tweak = tweak;
-        this.radix = radix;
-        this.alphabet = alphabet;
-        this.minLength = minLength;
-        this.maxLength = maxLength;
-        this.fpeClient = new FF1(key, tweak, radix, alphabet, minLength, maxLength);
+        this.#key = key;
+        this.#tweak = tweak;
+        this.#radix = radix;
+        this.#alphabet = alphabet;
+        this.#minLength = minLength;
+        this.#maxLength = maxLength;
+        this.#fpeClient = new FF1(key, tweak, radix, alphabet, minLength, maxLength);
     }
 
     encode(dbId: DatabaseId): string {
-        const obuscatedId = this.obuscate(dbId);
-        const encoded = base62.encode(obuscatedId);
+        const obfuscatedId = this.obfuscate(dbId);
+        const encoded = base62.encode(obfuscatedId);
         return encoded;
     }
 
     decode(shortCode: string): DatabaseId {
         const decoded = base62.decode(shortCode);
-        const databaseId = this.deObuscate(decoded);
+        const databaseId = this.deObfuscate(decoded);
         return databaseId;
     }
 
     obuscate(dbId: DatabaseId): number {
-        const encrypted = this.fpeClient.encrypt(String(dbId));
-        return Number(encrypted);
+        return this.obfuscate(dbId);
     }
 
-    deObuscate(obuscatedId: number): number {
-        const decrypted = this.fpeClient.decrypt(String(obuscatedId));
-        return Number(decrypted);
+    deObuscate(obfuscatedId: number): number {
+        return this.deObfuscate(obfuscatedId);
     }
 
     obfuscate(dbId: DatabaseId): number {
-        return this.obuscate(dbId);
+        const encrypted = this.#fpeClient.encrypt(String(dbId));
+        return Number(encrypted);
     }
 
     deObfuscate(obfuscatedId: number): number {
-        return this.deObuscate(obfuscatedId);
+        const decrypted = this.#fpeClient.decrypt(String(obfuscatedId));
+        return Number(decrypted);
     }
 }
 

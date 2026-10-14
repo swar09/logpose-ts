@@ -1,4 +1,5 @@
-import { Request, Response, Router } from "express";
+import { Router } from "express";
+import { redirectShortCode } from "../controllers/urls";
 import auth_router from "./auth";
 import billing_router from "./billing";
 import health_router from "./health";
@@ -19,8 +20,5 @@ router.use("/api/v1/billing", billing_router);
 router.use("/api/v1/webhooks", webhooks_router);
 
 router.get("/:short_code", redirectShortCode);
-
-async function redirectShortCode(req: Request, res: Response) {
-}
 
 export default router;
