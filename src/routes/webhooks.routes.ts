@@ -5,6 +5,10 @@ import { RazorpayWebhookSchema } from "../models/billing.model";
 
 export const webhooksRouter = Router();
 
-webhooksRouter.post("/razorpay", validate({ body: RazorpayWebhookSchema }), handleRazorpayWebhook);
+webhooksRouter.post(
+  "/razorpay",
+  validate({ body: RazorpayWebhookSchema }),
+  handleRazorpayWebhook,
+);
 
 export default webhooksRouter;

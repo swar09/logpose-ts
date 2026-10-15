@@ -8,7 +8,11 @@ export interface RequestValidators {
 }
 
 export function validate(schemas: RequestValidators) {
-  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  return async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+  ): Promise<void> => {
     try {
       if (schemas.body) {
         req.body = await schemas.body.parseAsync(req.body);
