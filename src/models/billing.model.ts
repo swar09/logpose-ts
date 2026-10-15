@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export enum PaymentStatus {
     CREATED,
     SUCESSFULL,
@@ -139,3 +141,46 @@ export type NewWebhookEvent = {
     status: WebhookProcessingStatus,
     payload: string[],
 }
+
+
+
+export const CreateBillingOrderSchema = z.object({
+    plan_id: z.number().int().positive("Plan ID must be a positive integer"),
+});
+export type CreateBillingOrderDTO = z.infer<typeof CreateBillingOrderSchema>;
+
+export const VerifyPaymentSchema = z.object({
+    razorpay_order_id: z.string().min(1, "Razorpay order ID is required"),
+    razorpay_payment_id: z.string().min(1, "Razorpay payment ID is required"),
+    razorpay_signature: z.string().min(1, "Razorpay signature is required"),
+});
+export type VerifyPaymentDTO = z.infer<typeof VerifyPaymentSchema>;
+
+export const CancelSubscriptionSchema = z.object({
+    subscription_id: z.string().min(1, "Subscription ID is required"),
+});
+export type CancelSubscriptionDTO = z.infer<typeof CancelSubscriptionSchema>;
+
+export const BillingIntervalSchema = z.nativeEnum(BillingInterval);
+
+export const CreatePlanSchema = z.object({
+    name: z.string().min(1, "Plan name is required").max(100),
+    code: z.string().min(1, "Plan code is required").max(50),
+    description: z.string().max(500).optional(),
+    amount: z.number().int().positive("Amount must be a positive integer in cents"),
+    currency: z.string().length(3, "Currency must be a 3-letter ISO code").default("INR"),
+    interval: BillingIntervalSchema.default(BillingInterval.MONTHLY),
+    max_urls_limit: z.number().int().nonnegative(),
+    custom_alias_allowed: z.boolean().default(false),
+    analytics_retention_days: z.number().int().positive(),
+    features: z.array(z.string()).default([]),
+    is_active: z.boolean().default(true),
+});
+export type CreatePlanDTO = z.infer<typeof CreatePlanSchema>;
+
+export const RazorpayWebhookSchema = z.object({
+    event: z.string().min(1, "Webhook event name is required"),
+    payload: z.record(z.string(), z.any()),
+    created_at: z.number().int().optional(),
+});
+export type RazorpayWebhookDTO = z.infer<typeof RazorpayWebhookSchema>;

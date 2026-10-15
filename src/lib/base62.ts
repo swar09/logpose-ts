@@ -1,5 +1,5 @@
 import base62 from "base62";
-import { DatabaseId } from "../models/urls";
+import { DatabaseId } from "../models/urls.model";
 import { FF1 } from "ff1-js";
 
 export class BaseConversion {

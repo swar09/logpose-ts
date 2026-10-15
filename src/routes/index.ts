@@ -1,24 +1,24 @@
 import { Router } from "express";
-import { redirectShortCode } from "../controllers/urls";
-import auth_router from "./auth";
-import billing_router from "./billing";
-import health_router from "./health";
-import public_router from "./public";
-import urls_router from "./urls";
-import users_router from "./users";
-import webhooks_router from "./webhooks";
+import { redirectShortCode } from "../controllers/urls.controller";
+import { authRouter } from "./auth.routes";
+import { billingRouter } from "./billing.routes";
+import { healthRouter } from "./health.routes";
+import { publicRouter } from "./public.routes";
+import { urlsRouter } from "./urls.routes";
+import { usersRouter } from "./users.routes";
+import { webhooksRouter } from "./webhooks.routes";
 
-const router = Router();
+export const appRouter = Router();
 
-router.use("/api", health_router);
+appRouter.use("/api", healthRouter);
 
-router.use("/api/v1/auth", auth_router);
-router.use("/api/v1/users", users_router);
-router.use("/api/v1/urls", urls_router);
-router.use("/api/v1/public", public_router);
-router.use("/api/v1/billing", billing_router);
-router.use("/api/v1/webhooks", webhooks_router);
+appRouter.use("/api/v1/auth", authRouter);
+appRouter.use("/api/v1/users", usersRouter);
+appRouter.use("/api/v1/urls", urlsRouter);
+appRouter.use("/api/v1/public", publicRouter);
+appRouter.use("/api/v1/billing", billingRouter);
+appRouter.use("/api/v1/webhooks", webhooksRouter);
 
-router.get("/:short_code", redirectShortCode);
+appRouter.get("/:short_code", redirectShortCode);
 
-export default router;
+export default appRouter;

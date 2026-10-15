@@ -1,7 +1,7 @@
 import { Prisma } from "../generated/prisma/client";
 import { Argon2Hasher } from "../lib/argon2";
-import { RedisClient } from "./urls";
-import { UsersRepository } from "./users";
+import { RedisClient } from "./urls.repository";
+import { UsersRepository } from "./users.repository";
 
 export class AuthRepository {
     #redis?: RedisClient;
