@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { redirectShortCode } from "../controllers/urls.controller";
+import { analyticsMiddleware } from "../middlewares/analytics.middleware";
 import { authRouter } from "./auth.routes";
 import { billingRouter } from "./billing.routes";
 import { healthRouter } from "./health.routes";
@@ -19,6 +20,6 @@ appRouter.use("/api/v1/public", publicRouter);
 appRouter.use("/api/v1/billing", billingRouter);
 appRouter.use("/api/v1/webhooks", webhooksRouter);
 
-appRouter.get("/:short_code", redirectShortCode);
+appRouter.get("/:short_code", analyticsMiddleware, redirectShortCode);
 
 export default appRouter;

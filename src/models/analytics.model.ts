@@ -23,10 +23,6 @@ export type NewUrlAnalytics = {
   country_code?: string;
 };
 
-// Backward-compatibility type aliases
-export type urlAnalytics = UrlAnalytics;
-export type newUrlAnalytics = NewUrlAnalytics;
-
 export const CreateAnalyticsSchema = z.object({
   device: z.string().optional(),
   browser: z.string().optional(),

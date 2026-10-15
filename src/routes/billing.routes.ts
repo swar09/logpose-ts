@@ -6,6 +6,7 @@ import {
   getBillingSubscription,
   verifyBillingPayment,
 } from "../controllers/billing.controller";
+import { authMiddleware } from "../middlewares/auth.middleware";
 import { validate } from "../middlewares/validate.middleware";
 import {
   CancelSubscriptionSchema,
@@ -18,17 +19,20 @@ export const billingRouter = Router();
 billingRouter.get("/plans", getBillingPlans);
 billingRouter.post(
   "/order",
+  authMiddleware,
   validate({ body: CreateBillingOrderSchema }),
   createBillingOrder,
 );
 billingRouter.post(
   "/verify",
+  authMiddleware,
   validate({ body: VerifyPaymentSchema }),
   verifyBillingPayment,
 );
-billingRouter.get("/subscription", getBillingSubscription);
+billingRouter.get("/subscription", authMiddleware, getBillingSubscription);
 billingRouter.post(
   "/cancel",
+  authMiddleware,
   validate({ body: CancelSubscriptionSchema }),
   cancelBillingSubscription,
 );
