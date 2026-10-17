@@ -34,6 +34,34 @@ export const redisConfig = {
   defaultTTL: Number(process.env.REDIS_DEFAULT_TTL) || 3600, // 1 hour
 };
 
+export const mongoConfig = {
+  uri:
+    process.env.MONGO_URI ||
+    "mongodb://admin:adminpassword@localhost:27017/logpose_analytics?authSource=admin",
+  dbName: process.env.MONGO_DB || "logpose_analytics",
+  maxPoolSize: Number(process.env.MONGO_MAX_POOL_SIZE) || 20,
+  minPoolSize: Number(process.env.MONGO_MIN_POOL_SIZE) || 5,
+};
+
+export const kafkaConfig = {
+  broker: process.env.KAFKA_BROKER || process.env.KAFKA_BROKERS || "localhost:9092",
+  brokers: (process.env.KAFKA_BROKERS || process.env.KAFKA_BROKER || "localhost:9092")
+    .split(",")
+    .map((b) => b.trim())
+    .filter(Boolean),
+  clientId: process.env.KAFKA_CLIENT_ID || "logpose-api",
+  topicClicks: process.env.KAFKA_TOPIC_CLICKS || process.env.KAFKA_CLICK_TOPIC || "url-clicks",
+  topics: {
+    urlClicks: process.env.KAFKA_CLICK_TOPIC || process.env.KAFKA_TOPIC_CLICKS || "url-clicks",
+  },
+  groupId: process.env.KAFKA_GROUP_ID || "analytics-stream-consumers",
+  batchSize: Number(process.env.STREAM_BATCH_SIZE) || 500,
+  flushIntervalMs: Number(process.env.STREAM_FLUSH_INTERVAL_MS) || 2000,
+  connectionTimeout: Number(process.env.KAFKA_CONNECTION_TIMEOUT_MS) || 5000,
+  requestTimeout: Number(process.env.KAFKA_REQUEST_TIMEOUT_MS) || 30000,
+  retries: Number(process.env.KAFKA_MAX_RETRIES) || 5,
+};
+
 /**
  * Argon2 Password Hasher configuration
  */
@@ -86,8 +114,19 @@ export const base62Config = {
 export const scheduleConfig = {
   analyticsRetentionDays: Number(process.env.ANALYTICS_RETENTION_DAYS) || 90,
   retentionCleanupIntervalMs:
-    Number(process.env.RETENTION_CLEANUP_INTERVAL_MS) || 3600000, // 1 hour
-  urlExpiryIntervalMs: Number(process.env.URL_EXPIRY_INTERVAL_MS) || 300000, // 5 minutes
+    Number(process.env.RETENTION_CLEANUP_INTERVAL_MS) || 3600000,
+  urlExpiryIntervalMs: Number(process.env.URL_EXPIRY_INTERVAL_MS) || 300000,
+  subscriptionReconcileIntervalMs:
+    Number(process.env.SUBSCRIPTION_RECONCILE_INTERVAL_MS) || 60000,
+};
+
+export const razorpayConfig = {
+  keyId: process.env.RAZORPAY_KEY_ID || "",
+  keySecret: process.env.RAZORPAY_KEY_SECRET || "",
+  webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || "",
+  get isConfigured(): boolean {
+    return Boolean(this.keyId && this.keySecret);
+  },
 };
 
 /**
@@ -104,6 +143,7 @@ export const authConfig = {
 export const config = {
   app: appConfig,
   db: dbConfig,
+  mongo: mongoConfig,
   redis: redisConfig,
   hasher: hasherConfig,
   jwt: jwtConfig,
@@ -111,6 +151,8 @@ export const config = {
   base62: base62Config,
   auth: authConfig,
   schedule: scheduleConfig,
+  kafka: kafkaConfig,
+  razorpay: razorpayConfig,
 };
 
 /**

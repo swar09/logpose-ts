@@ -5,6 +5,8 @@ import {
   getAnalyticsStats,
   getShortCodeAnalytics,
   getShortCodeAnalyticsStats,
+  getUrlMetrics,
+  getShortCodeMetrics,
   isUserAdmin,
   canAccessUrlAnalytics,
 } from "../../src/controllers/analytics.controller";
@@ -470,6 +472,103 @@ describe("analytics.controller", () => {
       });
       expect(analyticsRepo.getStats).toHaveBeenCalledWith(
         expect.objectContaining({ shortCode: "code1" }),
+      );
+    });
+  });
+
+  describe("getUrlMetrics (MongoDB url_metrics)", () => {
+    it("should fetch pre-aggregated metrics rollups and summary", async () => {
+      const mockResult = {
+        data: [
+          {
+            _id: "code1:2026-10-17",
+            shortCode: "code1",
+            date: "2026-10-17",
+            totalClicks: 50,
+            devices: { desktop: 50 },
+            countries: { US: 50 },
+            browsers: { Chrome: 50 },
+            referers: { direct: 50 },
+            updatedAt: new Date(),
+          },
+        ],
+        total: 1,
+        summary: {
+          totalClicks: 50,
+          devices: { desktop: 50 },
+          countries: { US: 50 },
+          browsers: { Chrome: 50 },
+          referers: { direct: 50 },
+        },
+      };
+
+      vi.spyOn(analyticsRepo, "getMetrics").mockResolvedValue(mockResult as any);
+
+      const req: any = {
+        claims: { sub: "user-1", role: UserRole.USER },
+        query: { from: "2026-10-01", to: "2026-10-17" },
+      };
+      const res = createMockResponse();
+
+      await getUrlMetrics(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.data.status).toBe("success");
+      expect(res.data.source).toBe("url_metrics");
+      expect(res.data.data).toHaveLength(1);
+      expect(res.data.summary.totalClicks).toBe(50);
+      expect(analyticsRepo.getMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({
+          userId: "user-1",
+          fromDate: "2026-10-01",
+          toDate: "2026-10-17",
+        }),
+        expect.objectContaining({ page: 1, pageSize: 30 }),
+      );
+    });
+  });
+
+  describe("getShortCodeMetrics", () => {
+    it("should fetch metrics for an authorized short code", async () => {
+      vi.spyOn(urlRepo, "getByShortCode").mockResolvedValue({
+        short_code: "code1",
+        long_url: "https://example.com",
+        createdBy: "user-1",
+        guestId: null,
+        expiresAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      const mockResult = {
+        data: [],
+        total: 0,
+        summary: {
+          totalClicks: 0,
+          devices: {},
+          countries: {},
+          browsers: {},
+          referers: {},
+        },
+      };
+
+      vi.spyOn(analyticsRepo, "getMetrics").mockResolvedValue(mockResult as any);
+
+      const req: any = {
+        params: { short_code: "code1" },
+        claims: { sub: "user-1", role: UserRole.USER },
+        query: {},
+      };
+      const res = createMockResponse();
+
+      await getShortCodeMetrics(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.data.status).toBe("success");
+      expect(res.data.short_code).toBe("code1");
+      expect(analyticsRepo.getMetrics).toHaveBeenCalledWith(
+        expect.objectContaining({ shortCode: "code1" }),
+        expect.any(Object),
       );
     });
   });

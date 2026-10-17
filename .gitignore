@@ -1,6 +1,8 @@
 node_modules
 .env
 .env.*
+.env.production
+.production.env
 !.env.example
 .dist
 /src/generated/prisma
@@ -11,4 +13,8 @@ workers/**/node_modules
 workers/**/dist
 workers/**/.env
 workers/**/.env.*
+workers/**/.env.production
+workers/**/.production.env
 !workers/**/.env.example
+
+docs

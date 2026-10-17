@@ -5,6 +5,8 @@ import {
   getAnalyticsStats,
   getShortCodeAnalytics,
   getShortCodeAnalyticsStats,
+  getUrlMetrics,
+  getShortCodeMetrics,
 } from "../controllers/analytics.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { validate } from "../middlewares/validate.middleware";
@@ -13,9 +15,44 @@ import {
   AnalyticsIdParamSchema,
   AnalyticsShortCodeParamSchema,
   AnalyticsStatsQuerySchema,
+  MetricsQuerySchema,
 } from "../models/analytics.model";
 
 export const analyticsRouter = Router();
+
+analyticsRouter.get(
+  "/metrics",
+  authMiddleware,
+  validate({ query: MetricsQuerySchema }),
+  getUrlMetrics,
+);
+
+analyticsRouter.get(
+  "/urls/:short_code/metrics",
+  authMiddleware,
+  validate({
+    params: AnalyticsShortCodeParamSchema,
+    query: MetricsQuerySchema,
+  }),
+  getShortCodeMetrics,
+);
+
+analyticsRouter.get(
+  "/stats",
+  authMiddleware,
+  validate({ query: AnalyticsStatsQuerySchema }),
+  getAnalyticsStats,
+);
+
+analyticsRouter.get(
+  "/urls/:short_code/stats",
+  authMiddleware,
+  validate({
+    params: AnalyticsShortCodeParamSchema,
+    query: AnalyticsStatsQuerySchema,
+  }),
+  getShortCodeAnalyticsStats,
+);
 
 analyticsRouter.get(
   "/",
@@ -25,10 +62,10 @@ analyticsRouter.get(
 );
 
 analyticsRouter.get(
-  "/stats",
+  "/raw",
   authMiddleware,
-  validate({ query: AnalyticsStatsQuerySchema }),
-  getAnalyticsStats,
+  validate({ query: AnalyticsFilterQuerySchema }),
+  getAnalytics,
 );
 
 analyticsRouter.get(
@@ -42,13 +79,13 @@ analyticsRouter.get(
 );
 
 analyticsRouter.get(
-  "/urls/:short_code/stats",
+  "/urls/:short_code/raw",
   authMiddleware,
   validate({
     params: AnalyticsShortCodeParamSchema,
-    query: AnalyticsStatsQuerySchema,
+    query: AnalyticsFilterQuerySchema,
   }),
-  getShortCodeAnalyticsStats,
+  getShortCodeAnalytics,
 );
 
 analyticsRouter.get(

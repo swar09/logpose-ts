@@ -186,3 +186,27 @@ export interface ErrorResponse {
   message: string;
   errors?: unknown;
 }
+
+export const MetricsQuerySchema = z.object({
+  short_code: z.string().max(50).optional(),
+  from: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "from must be in YYYY-MM-DD format")
+    .optional(),
+  to: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "to must be in YYYY-MM-DD format")
+    .optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(30),
+});
+export type MetricsQueryDTO = z.infer<typeof MetricsQuerySchema>;
+
+export interface MetricsQuery {
+  short_code?: string;
+  from?: string;
+  to?: string;
+  page?: string;
+  pageSize?: string;
+}
+

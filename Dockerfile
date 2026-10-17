@@ -21,6 +21,8 @@ RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/workers ./workers
+COPY --from=builder /app/src ./src
 
 EXPOSE 3000
 

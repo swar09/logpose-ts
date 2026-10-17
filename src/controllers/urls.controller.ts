@@ -9,6 +9,7 @@ import {
 import { UserRole } from "../models/users.model";
 import { analyticsRepo, urlRepo } from "../repositories";
 import { baseConverter } from "../lib/base62";
+import { kafkaProducerService } from "../services/kafka-producer.service";
 
 export interface UrlsPaginationQuery {
     page?: string;
@@ -477,17 +478,16 @@ export async function redirectShortCode(
         }
 
         if (req.analytics) {
-            analyticsRepo
-                .add({
-                    shortCode: short_code,
-                    clickedAt: req.analytics.clicked_at,
-                    ipAddress: req.analytics.ip_address || "unknown",
-                    userAgent: req.analytics.user_agent || "unknown",
-                    device: req.analytics.device || "unknown",
-                    countryCode: req.analytics.country_code || "unknown",
-                    referer: req.analytics.referer || "direct",
-                })
-                .catch((err) => console.error("Async analytics tracking error:", err));
+            kafkaProducerService.publishClickFireAndForget({
+                shortCode: short_code,
+                clickedAt: req.analytics.clicked_at,
+                ipAddress: req.analytics.ip_address || "unknown",
+                userAgent: req.analytics.user_agent || "unknown",
+                device: req.analytics.device || "unknown",
+                browser: req.analytics.browser,
+                countryCode: req.analytics.country_code || "unknown",
+                referer: req.analytics.referer || "direct",
+            });
         }
 
         return res.redirect(302, longUrl);

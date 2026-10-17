@@ -4,6 +4,7 @@ import {
   AnalyticsIdParamDTO,
   AnalyticsShortCodeParamDTO,
   AnalyticsStatsQuery,
+  MetricsQuery,
 } from "../models/analytics.model";
 import { UserRole } from "../models/users.model";
 import { analyticsRepo, urlRepo } from "../repositories";
@@ -407,6 +408,153 @@ export async function getShortCodeAnalyticsStats(
     });
   } catch (error) {
     console.error("Failed to load short code analytics statistics:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function getUrlMetrics(
+  req: Request<Record<string, never>, unknown, unknown, MetricsQuery>,
+  res: Response,
+) {
+  try {
+    const userId = req.claims?.sub;
+    const userRole = req.claims?.role;
+    const isAdmin = isUserAdmin(userRole);
+
+    const {
+      short_code,
+      from,
+      to,
+      page: queryPage,
+      pageSize: queryPageSize,
+    } = req.query;
+
+    const page = Math.max(1, Number(queryPage) || 1);
+    const pageSize = Math.max(1, Math.min(Number(queryPageSize) || 30, 100));
+
+    const filterCriteria: {
+      shortCode?: string;
+      userId?: string;
+      fromDate?: string;
+      toDate?: string;
+    } = {
+      ...(from && { fromDate: from }),
+      ...(to && { toDate: to }),
+    };
+
+    if (short_code) {
+      const existingUrl = await urlRepo.getByShortCode(short_code);
+      if (!existingUrl) {
+        return res.status(404).json({
+          status: "error",
+          message: "URL not found",
+        });
+      }
+
+      if (!canAccessUrlAnalytics(userId, userRole, existingUrl.createdBy)) {
+        return res.status(403).json({
+          status: "error",
+          message:
+            "Forbidden: You are not authorized to view metrics for this URL",
+        });
+      }
+
+      filterCriteria.shortCode = short_code;
+    } else if (!isAdmin && userId) {
+      filterCriteria.userId = userId;
+    }
+
+    const { data, total, summary } = await analyticsRepo.getMetrics(
+      filterCriteria,
+      { page, pageSize },
+    );
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    return res.status(200).json({
+      status: "success",
+      source: "url_metrics",
+      data,
+      summary,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+      ...(short_code && { short_code }),
+    });
+  } catch (error) {
+    console.error("Failed to load URL metrics:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Internal server error",
+    });
+  }
+}
+
+export async function getShortCodeMetrics(
+  req: Request<AnalyticsShortCodeParamDTO, unknown, unknown, MetricsQuery>,
+  res: Response,
+) {
+  try {
+    const { short_code } = req.params;
+    const userId = req.claims?.sub;
+    const userRole = req.claims?.role;
+
+    const existingUrl = await urlRepo.getByShortCode(short_code);
+    if (!existingUrl) {
+      return res.status(404).json({
+        status: "error",
+        message: "URL not found",
+      });
+    }
+
+    if (!canAccessUrlAnalytics(userId, userRole, existingUrl.createdBy)) {
+      return res.status(403).json({
+        status: "error",
+        message:
+          "Forbidden: You are not authorized to view metrics for this URL",
+      });
+    }
+
+    const { from, to, page: queryPage, pageSize: queryPageSize } = req.query;
+    const page = Math.max(1, Number(queryPage) || 1);
+    const pageSize = Math.max(1, Math.min(Number(queryPageSize) || 30, 100));
+
+    const { data, total, summary } = await analyticsRepo.getMetrics(
+      {
+        shortCode: short_code,
+        ...(from && { fromDate: from }),
+        ...(to && { toDate: to }),
+      },
+      { page, pageSize },
+    );
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    return res.status(200).json({
+      status: "success",
+      source: "url_metrics",
+      short_code,
+      data,
+      summary,
+      pagination: {
+        total,
+        page,
+        pageSize,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrev: page > 1,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to load short code metrics:", error);
     return res.status(500).json({
       status: "error",
       message: "Internal server error",

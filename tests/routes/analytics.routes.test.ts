@@ -157,4 +157,72 @@ describe("analytics.routes integration", () => {
     expect(res.body.status).toBe("success");
     expect(res.body.data.id).toBe(validUuid);
   });
+
+  it("GET /api/v1/analytics/metrics returns pre-aggregated metrics from url_metrics", async () => {
+    vi.spyOn(analyticsRepo, "getMetrics").mockResolvedValue({
+      data: [
+        {
+          _id: "test1:2026-10-17",
+          shortCode: "test1",
+          date: "2026-10-17",
+          totalClicks: 25,
+          devices: { desktop: 20, mobile: 5 },
+          countries: { US: 25 },
+          browsers: { Chrome: 25 },
+          referers: { direct: 25 },
+          updatedAt: new Date(),
+        },
+      ],
+      total: 1,
+      summary: {
+        totalClicks: 25,
+        devices: { desktop: 20, mobile: 5 },
+        countries: { US: 25 },
+        browsers: { Chrome: 25 },
+        referers: { direct: 25 },
+      },
+    });
+
+    const res = await request(app)
+      .get("/api/v1/analytics/metrics?from=2026-10-01&to=2026-10-17")
+      .set("Authorization", `Bearer ${userToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.source).toBe("url_metrics");
+    expect(res.body.summary.totalClicks).toBe(25);
+  });
+
+  it("GET /api/v1/analytics/urls/:short_code/metrics returns scoped rollups", async () => {
+    vi.spyOn(urlRepo, "getByShortCode").mockResolvedValue({
+      short_code: "code1",
+      long_url: "https://example.com",
+      createdBy: userId,
+      guestId: null,
+      expiresAt: new Date(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    vi.spyOn(analyticsRepo, "getMetrics").mockResolvedValue({
+      data: [],
+      total: 0,
+      summary: {
+        totalClicks: 0,
+        devices: {},
+        countries: {},
+        browsers: {},
+        referers: {},
+      },
+    });
+
+    const res = await request(app)
+      .get("/api/v1/analytics/urls/code1/metrics")
+      .set("Authorization", `Bearer ${userToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe("success");
+    expect(res.body.source).toBe("url_metrics");
+    expect(res.body.short_code).toBe("code1");
+  });
 });

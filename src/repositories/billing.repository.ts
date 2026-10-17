@@ -130,6 +130,43 @@ export class BillingRepository {
     return this.updateSubscriptionStatus(id, SubscriptionStatus.INACTIVE);
   }
 
+  async findExpiredSubscriptions(
+    now: Date = new Date(),
+    limit?: number,
+  ): Promise<UserSubscriptions[]> {
+    return this.db.userSubscriptions.findMany({
+      where: {
+        currentPeriodEnd: { lt: now },
+        status: {
+          in: [
+            SubscriptionStatus.ACTIVE,
+            SubscriptionStatus.CREATED,
+            SubscriptionStatus.HOLD,
+          ],
+        },
+      },
+      include: {
+        userSubscription: true,
+      },
+      orderBy: { currentPeriodEnd: "asc" },
+      ...(limit ? { take: limit } : {}),
+    });
+  }
+
+  async expireSubscriptionsByIds(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const result = await this.db.userSubscriptions.updateMany({
+      where: {
+        id: { in: ids },
+        status: { not: SubscriptionStatus.INACTIVE },
+      },
+      data: {
+        status: SubscriptionStatus.INACTIVE,
+      },
+    });
+    return result.count;
+  }
+
   async updateSubscription(
     id: string,
     data:
@@ -139,6 +176,40 @@ export class BillingRepository {
     return this.db.userSubscriptions.update({
       where: { id },
       data,
+    });
+  }
+
+  async recordWebhookEvent(
+    eventId: string,
+    eventType: string,
+    payload: string[] = [],
+  ) {
+    return this.db.webhookEvents.create({
+      data: {
+        eventId,
+        eventType,
+        payload,
+      },
+    });
+  }
+
+  async getWebhookEventByEventId(eventId: string) {
+    return this.db.webhookEvents.findFirst({
+      where: { eventId },
+    });
+  }
+
+  async markWebhookProcessed(
+    id: string,
+    status: "COMPLETED" | "FAILED",
+    errorLog?: string,
+  ) {
+    return this.db.webhookEvents.update({
+      where: { id },
+      data: {
+        status,
+        errorLog,
+      },
     });
   }
 }

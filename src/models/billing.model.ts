@@ -140,6 +140,12 @@ export const CreateBillingOrderSchema = z.object({
 });
 export type CreateBillingOrderDTO = z.infer<typeof CreateBillingOrderSchema>;
 
+export const CreateSubscriptionSchema = z.object({
+  plan_id: z.number().int().positive("Plan ID must be a positive integer"),
+  total_cycles: z.number().int().min(1).default(12),
+});
+export type CreateSubscriptionDTO = z.infer<typeof CreateSubscriptionSchema>;
+
 export const VerifyPaymentSchema = z.object({
   razorpay_order_id: z.string().min(1, "Razorpay order ID is required"),
   razorpay_payment_id: z.string().min(1, "Razorpay payment ID is required"),
@@ -175,9 +181,121 @@ export const CreatePlanSchema = z.object({
 });
 export type CreatePlanDTO = z.infer<typeof CreatePlanSchema>;
 
+export const RazorpaySupportedEvents = [
+  "payment.authorized",
+  "payment.captured",
+  "payment.failed",
+  "order.paid",
+  "subscription.authenticated",
+  "subscription.activated",
+  "subscription.charged",
+  "subscription.completed",
+  "subscription.updated",
+  "subscription.pending",
+  "subscription.halted",
+  "subscription.cancelled",
+  "subscription.paused",
+  "subscription.resumed",
+] as const;
+
+export const RazorpayPaymentEntitySchema = z.object({
+  id: z.string().startsWith("pay_"),
+  entity: z.literal("payment").default("payment"),
+  amount: z.number(),
+  currency: z.string(),
+  status: z.string(),
+  order_id: z.string().nullable().optional(),
+  invoice_id: z.string().nullable().optional(),
+  international: z.boolean().optional(),
+  method: z.string().optional(),
+  amount_refunded: z.number().optional(),
+  refund_status: z.string().nullable().optional(),
+  captured: z.boolean().optional(),
+  description: z.string().nullable().optional(),
+  card_id: z.string().nullable().optional(),
+  bank: z.string().nullable().optional(),
+  wallet: z.string().nullable().optional(),
+  vpa: z.string().nullable().optional(),
+  email: z.string().optional(),
+  contact: z.string().optional(),
+  notes: z.record(z.string(), z.any()).optional().default({}),
+  fee: z.number().nullable().optional(),
+  tax: z.number().nullable().optional(),
+  error_code: z.string().nullable().optional(),
+  error_description: z.string().nullable().optional(),
+  error_source: z.string().nullable().optional(),
+  error_step: z.string().nullable().optional(),
+  error_reason: z.string().nullable().optional(),
+  created_at: z.number().optional(),
+});
+export type RazorpayPaymentEntity = z.infer<typeof RazorpayPaymentEntitySchema>;
+
+export const RazorpayOrderEntitySchema = z.object({
+  id: z.string().startsWith("order_"),
+  entity: z.literal("order").default("order"),
+  amount: z.number(),
+  amount_paid: z.number().optional(),
+  amount_due: z.number().optional(),
+  currency: z.string(),
+  receipt: z.string().nullable().optional(),
+  status: z.string(),
+  attempts: z.number().optional(),
+  notes: z.record(z.string(), z.any()).optional().default({}),
+  created_at: z.number().optional(),
+});
+export type RazorpayOrderEntity = z.infer<typeof RazorpayOrderEntitySchema>;
+
+export const RazorpaySubscriptionEntitySchema = z.object({
+  id: z.string().startsWith("sub_"),
+  entity: z.literal("subscription").default("subscription"),
+  plan_id: z.string().optional(),
+  customer_id: z.string().nullable().optional(),
+  status: z.string(),
+  current_start: z.number().nullable().optional(),
+  current_end: z.number().nullable().optional(),
+  ended_at: z.number().nullable().optional(),
+  quantity: z.number().optional(),
+  notes: z.record(z.string(), z.any()).optional().default({}),
+  charge_at: z.number().nullable().optional(),
+  start_at: z.number().nullable().optional(),
+  end_at: z.number().nullable().optional(),
+  auth_attempts: z.number().optional(),
+  total_count: z.number().optional(),
+  paid_count: z.number().optional(),
+  remaining_count: z.number().optional(),
+  short_url: z.string().optional(),
+  created_at: z.number().optional(),
+});
+export type RazorpaySubscriptionEntity = z.infer<
+  typeof RazorpaySubscriptionEntitySchema
+>;
+
+export const RazorpayWebhookPayloadContainerSchema = z.object({
+  payment: z
+    .object({
+      entity: RazorpayPaymentEntitySchema,
+    })
+    .optional(),
+  order: z
+    .object({
+      entity: RazorpayOrderEntitySchema,
+    })
+    .optional(),
+  subscription: z
+    .object({
+      entity: RazorpaySubscriptionEntitySchema,
+    })
+    .optional(),
+});
+
 export const RazorpayWebhookSchema = z.object({
+  entity: z.string().default("event"),
+  account_id: z.string().optional(),
   event: z.string().min(1, "Webhook event name is required"),
-  payload: z.record(z.string(), z.any()),
+  contains: z.array(z.string()).optional().default([]),
+  payload: RazorpayWebhookPayloadContainerSchema.and(
+    z.record(z.string(), z.any()),
+  ),
   created_at: z.number().int().optional(),
 });
 export type RazorpayWebhookDTO = z.infer<typeof RazorpayWebhookSchema>;

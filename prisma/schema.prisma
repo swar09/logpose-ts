@@ -47,7 +47,6 @@ model Url {
 
   author    User?       @relation(fields: [createdBy], references: [id], onDelete: Cascade)
   // guestId User? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
-  analytics Analytics[]
 
   @@index([id, short_code, createdBy])
   @@map("urls")
@@ -77,22 +76,6 @@ model Plans {
 
   @@index([id, code])
   @@map("plans")
-}
-
-model Analytics {
-  id          String   @id @default(uuid())
-  shortCode   String
-  clickedAt   DateTime
-  ipAddress   String
-  userAgent   String   @db.Text
-  device      String
-  countryCode String
-  referer     String   @db.VarChar(2048)
-
-  urlAnalytics Url? @relation(fields: [shortCode], references: [short_code], onDelete: Cascade)
-
-  @@index([id, shortCode])
-  @@map("url_analytics")
 }
 
 enum PaymentStatus {
