@@ -1,4 +1,4 @@
-import { Prisma, Url } from "../generated/prisma/client";
+import { Prisma, PrismaClient, Url } from "../generated/prisma/client";
 import { BatchPayload } from "../generated/prisma/internal/prismaNamespace";
 import {
   UrlCreateManyArgs,
@@ -15,12 +15,12 @@ export interface RedisClient {
 }
 
 export class UrlsRepository {
-  private readonly db: Prisma.TransactionClient;
+  private readonly db: PrismaClient;
   private readonly redis?: RedisClient;
   private readonly defaultTTL: number;
 
   constructor(
-    db: Prisma.TransactionClient,
+    db: PrismaClient,
     redis?: RedisClient,
     defaultTTL: number = 3600,
   ) {
@@ -48,11 +48,11 @@ export class UrlsRepository {
   }
 
   private async updateCacheUrl(
-    shortCode: string,
+    shortCode: string | null | undefined,
     longUrl: string,
     ttl: number = this.defaultTTL,
   ): Promise<void> {
-    if (!this.redis) return;
+    if (!this.redis || !shortCode) return;
     try {
       await this.redis.set(shortCode, longUrl, "EX", ttl);
     } catch (error) {
@@ -60,8 +60,10 @@ export class UrlsRepository {
     }
   }
 
-  private async invalidateCache(shortCode: string): Promise<void> {
-    if (!this.redis) return;
+  private async invalidateCache(
+    shortCode: string | null | undefined,
+  ): Promise<void> {
+    if (!this.redis || !shortCode) return;
     try {
       await this.redis.del(shortCode);
     } catch (error) {
@@ -71,10 +73,9 @@ export class UrlsRepository {
 
   async create(
     urlPayload: Prisma.UrlCreateInput | Prisma.UrlUncheckedCreateInput,
-  ): Promise<UrlWithoutId> {
+  ): Promise<Url> {
     const url = await this.db.url.create({
       data: urlPayload,
-      omit: { id: true },
     });
     await this.updateCacheUrl(url.short_code, url.long_url);
     return url;
@@ -135,7 +136,9 @@ export class UrlsRepository {
     return null;
   }
 
-  async getShortCodeById(id: number): Promise<{ short_code: string } | null> {
+  async getShortCodeById(
+    id: number,
+  ): Promise<{ short_code: string | null } | null> {
     return this.db.url.findUnique({
       where: { id },
       select: { short_code: true },
@@ -178,7 +181,7 @@ export class UrlsRepository {
   async updateShortCodeById(
     id: number,
     shortCode: string,
-  ): Promise<{ short_code: string; long_url: string }> {
+  ): Promise<{ short_code: string | null; long_url: string }> {
     const updated = await this.db.url.update({
       where: { id },
       data: { short_code: shortCode },
@@ -194,7 +197,7 @@ export class UrlsRepository {
   async updateShortCodeByShortCode(
     currentShortCode: string,
     newShortCode: string,
-  ): Promise<{ short_code: string; long_url: string }> {
+  ): Promise<{ short_code: string | null; long_url: string }> {
     const updated = await this.db.url.update({
       where: { short_code: currentShortCode },
       data: { short_code: newShortCode },
@@ -204,6 +207,20 @@ export class UrlsRepository {
       },
     });
     await this.invalidateCache(currentShortCode);
+    await this.updateCacheUrl(updated.short_code, updated.long_url);
+    return updated;
+  }
+
+  async updateByShortCode(
+    shortCode: string,
+    data: Prisma.UrlUpdateInput | Prisma.UrlUncheckedUpdateInput,
+  ): Promise<UrlWithoutId> {
+    const updated = await this.db.url.update({
+      where: { short_code: shortCode },
+      data,
+      omit: { id: true },
+    });
+    await this.invalidateCache(shortCode);
     await this.updateCacheUrl(updated.short_code, updated.long_url);
     return updated;
   }

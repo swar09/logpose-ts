@@ -37,7 +37,7 @@ model User {
 
 model Url {
   id         Int      @id @default(autoincrement())
-  short_code String   @unique @db.VarChar(7)
+  short_code String?   @unique @db.VarChar(7)
   long_url   String   @db.VarChar(1024)
   createdBy  String?
   guestId    String?
@@ -63,7 +63,7 @@ model Plans {
   id                 Int             @id
   name               String          @unique
   code               String          @unique
-  desciption         String          @db.Text
+  description        String          @db.Text
   amount             Int // cents
   interval           BillingInterval @default(MONTHLY)
   maxUrls            Int
@@ -97,9 +97,9 @@ model Analytics {
 
 enum PaymentStatus {
   CREATED
-  SUCESSFULL
+  SUCCESSFUL
   FAILED
-  REJCTED
+  REJECTED
 }
 
 model Payments {

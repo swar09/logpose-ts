@@ -1,4 +1,3 @@
-# Stage 1: Build
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -8,11 +7,9 @@ RUN npm ci
 
 COPY . .
 
-# Generate Prisma Client if schema exists, then build
 RUN if [ -f prisma/schema.prisma ]; then npx prisma generate; fi
 RUN npm run build
 
-# Stage 2: Production Runner
 FROM node:20-alpine AS runner
 
 WORKDIR /app

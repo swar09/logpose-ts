@@ -9,6 +9,7 @@ import {
 import { AuthRepository } from "../repositories/auth.repository";
 import { RedisClient } from "../repositories/urls.repository";
 import { verifySignature, verifyTokenSignature } from "../lib/jwt";
+import { jwtConfig } from "../config";
 
 export type { RedisClient };
 export { verifySignature, verifyTokenSignature };
@@ -29,7 +30,7 @@ export interface AuthMiddlewareOptions {
 }
 
 export function createAuthMiddleware(options?: AuthMiddlewareOptions) {
-  const secret = options?.secret ?? process.env.JWT_SECRET;
+  const secret = options?.secret ?? jwtConfig.secret;
   const redis = options?.redis;
   const authRepo = options?.authRepository;
   const jtiPrefix = options?.jtiKeyPrefix ?? "bl:";

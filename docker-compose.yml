@@ -1,16 +1,4 @@
 services:
-  app:
-    build: .
-    ports:
-      - "${PORT:-3000}:${PORT:-3000}"
-    env_file:
-      - .env
-    environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-mydb}?schema=public"
-    depends_on:
-      db:
-        condition: service_healthy
-
   db:
     image: postgres:16-alpine
     restart: always
@@ -32,5 +20,24 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-logpose_redis_password_secret_123}
+    ports:
+      - "${REDIS_PORT:-6380}:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli -a ${REDIS_PASSWORD:-logpose_redis_password_secret_123} ping | grep PONG",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   pgdata:
+  redisdata:

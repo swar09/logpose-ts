@@ -1,6 +1,7 @@
 import base62 from "base62";
 import { DatabaseId } from "../models/urls.model";
 import { FF1 } from "ff1-js";
+import { base62Config } from "../config";
 
 export class BaseConversion {
   #key: Buffer | string;
@@ -67,3 +68,8 @@ export class BaseConversion {
 }
 
 export { BaseConversion as baseconversion };
+
+const defaultKey = base62Config.key;
+const defaultTweak = base62Config.tweak;
+export const baseConverter = new BaseConversion(defaultKey, defaultTweak);
+

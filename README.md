@@ -29,3 +29,8 @@ To do:
 - Writing workers and a consumer worker
 - Writing an E2E integration test
 - Deployment on EC2 micro
+
+
+# Problems 
+There are several problems right now. One of them is the role-based access problem. The second problem is the custom alias and shortcode. Also, I want to shift to Snowflake ID generation and get rid of the auto-increment ID. Database partition  and Sharding. Worker setup. Deployment On Render. 
+

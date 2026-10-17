@@ -1,4 +1,4 @@
-import { Prisma, User } from "../generated/prisma/client";
+import { Prisma, PrismaClient, User } from "../generated/prisma/client";
 import type { RedisClient } from "./urls.repository";
 
 export type { RedisClient };
@@ -7,17 +7,18 @@ export type UserWithoutPassword = Omit<User, "hashed_password">;
 export type SafeUser = UserWithoutPassword;
 
 export class UsersRepository {
-  private readonly db: Prisma.TransactionClient;
+  private readonly db: PrismaClient;
 
-  constructor(db: Prisma.TransactionClient) {
+  constructor(db: PrismaClient) {
     this.db = db;
   }
 
   async create(
     userPayload: Prisma.UserCreateInput | Prisma.UserUncheckedCreateInput,
-  ): Promise<User> {
+  ): Promise<UserWithoutPassword> {
     return this.db.user.create({
       data: userPayload,
+      omit: { hashed_password: true },
     });
   }
 

@@ -5,12 +5,13 @@ import {
   Plans,
   Prisma,
   UserSubscriptions,
+  PrismaClient,
 } from "../generated/prisma/client";
 
 export class BillingRepository {
-  private readonly db: Prisma.TransactionClient;
+  private readonly db: PrismaClient;
 
-  constructor(db: Prisma.TransactionClient) {
+  constructor(db: PrismaClient) {
     this.db = db;
   }
 

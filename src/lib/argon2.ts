@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { argon2id } from "@noble/hashes/argon2";
+import { hasherConfig } from "../config";
 
 export class Argon2Hasher {
   #pepper: string;
@@ -17,12 +18,12 @@ export class Argon2Hasher {
     hashLength?: number;
     saltLength?: number;
   }) {
-    this.#pepper = options?.pepper ?? (process.env.PASSWORD_PEPPER || "");
-    this.#timeCost = options?.timeCost ?? 2;
-    this.#memoryCost = options?.memoryCost ?? 19456;
-    this.#parallelism = options?.parallelism ?? 1;
-    this.#hashLength = options?.hashLength ?? 32;
-    this.#saltLength = options?.saltLength ?? 16;
+    this.#pepper = options?.pepper ?? hasherConfig.pepper;
+    this.#timeCost = options?.timeCost ?? hasherConfig.timeCost;
+    this.#memoryCost = options?.memoryCost ?? hasherConfig.memoryCost;
+    this.#parallelism = options?.parallelism ?? hasherConfig.parallelism;
+    this.#hashLength = options?.hashLength ?? hasherConfig.hashLength;
+    this.#saltLength = options?.saltLength ?? hasherConfig.saltLength;
   }
 
   async hash(password: string): Promise<string> {
@@ -69,3 +70,5 @@ export class Argon2Hasher {
     return crypto.timingSafeEqual(Buffer.from(actualHash), expectedHash);
   }
 }
+
+export const hasher = new Argon2Hasher();

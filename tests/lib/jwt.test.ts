@@ -1,10 +1,16 @@
 import { describe, it, expect } from "vitest";
 import {
+  createAuthToken,
   createSignature,
+  decodeTokenPayload,
+  extractTokenJtiAndRemainingTime,
   signToken,
+  toModelUserRole,
+  verifyAndDecodeToken,
   verifySignature,
   verifyTokenSignature,
 } from "../../src/lib/jwt";
+import { UserRole } from "../../src/models/users.model";
 
 describe("JWT Signature Verification (src/lib/jwt.ts)", () => {
   const secret = "my-secure-production-secret-key-32-bytes!";
@@ -161,6 +167,79 @@ describe("JWT Signature Verification (src/lib/jwt.ts)", () => {
 
       const isValid = verifyTokenSignature(token, secret);
       expect(isValid).toBe(true);
+    });
+  });
+
+  describe("decodeTokenPayload", () => {
+    it("should decode JSON payload from token without verifying signature", () => {
+      const token = signToken({ sub: "user-999", role: "ADMIN" }, secret);
+      const payload = decodeTokenPayload<{ sub: string; role: string }>(token);
+
+      expect(payload).not.toBeNull();
+      expect(payload?.sub).toBe("user-999");
+      expect(payload?.role).toBe("ADMIN");
+    });
+
+    it("should return null for malformed tokens", () => {
+      expect(decodeTokenPayload("")).toBeNull();
+      expect(decodeTokenPayload("invalid-token")).toBeNull();
+    });
+  });
+
+  describe("toModelUserRole", () => {
+    it("should map ADMIN string and enum to UserRole.ADMIN", () => {
+      expect(toModelUserRole("ADMIN")).toBe(UserRole.ADMIN);
+      expect(toModelUserRole(UserRole.ADMIN)).toBe(UserRole.ADMIN);
+    });
+
+    it("should default any other role to UserRole.USER", () => {
+      expect(toModelUserRole("USER")).toBe(UserRole.USER);
+      expect(toModelUserRole(null)).toBe(UserRole.USER);
+      expect(toModelUserRole(undefined)).toBe(UserRole.USER);
+    });
+  });
+
+  describe("createAuthToken", () => {
+    it("should generate a valid JWT with standard claims", () => {
+      const result = createAuthToken({ id: "123e4567-e89b-12d3-a456-426614174000", role: "USER" }, 3600, secret);
+
+      expect(result.token).toBeDefined();
+      expect(result.expiresIn).toBe(3600);
+      expect(result.claims.sub).toBe("123e4567-e89b-12d3-a456-426614174000");
+      expect(result.claims.jti).toBeDefined();
+
+      const verified = verifyTokenSignature(result.token, secret);
+      expect(verified).toBe(true);
+    });
+  });
+
+  describe("extractTokenJtiAndRemainingTime", () => {
+    it("should extract JTI and calculate positive remaining time", () => {
+      const now = Math.floor(Date.now() / 1000);
+      const token = signToken({ jti: "token-jti-123", exp: now + 300 }, secret);
+      const extracted = extractTokenJtiAndRemainingTime(token);
+
+      expect(extracted).not.toBeNull();
+      expect(extracted?.jti).toBe("token-jti-123");
+      expect(extracted?.remainingTime).toBeGreaterThan(0);
+    });
+  });
+
+  describe("verifyAndDecodeToken", () => {
+    it("should return valid: true and payload for valid token", () => {
+      const token = signToken({ sub: "user-abc" }, secret);
+      const result = verifyAndDecodeToken<{ sub: string }>(token, secret);
+
+      expect(result.valid).toBe(true);
+      expect(result.payload?.sub).toBe("user-abc");
+    });
+
+    it("should return valid: false for token with invalid signature", () => {
+      const token = signToken({ sub: "user-abc" }, "different-secret");
+      const result = verifyAndDecodeToken<{ sub: string }>(token, secret);
+
+      expect(result.valid).toBe(false);
+      expect(result.error).toBeDefined();
     });
   });
 });

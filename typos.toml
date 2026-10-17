@@ -1,0 +1,14 @@
+[files]
+# Ignore auto-generated code
+extend-exclude = [
+  "prisma/migrations/**",
+  "src/generated/**",
+  "dist/**",
+  "package-lock.json",
+  "node_modules/**",
+]
+
+[default.extend-words]
+logpose = "logpose"
+prisma = "prisma"
+kafkajs = "kafkajs"

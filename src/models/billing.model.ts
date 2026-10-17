@@ -2,9 +2,9 @@ import { z } from "zod";
 
 export enum PaymentStatus {
   CREATED,
-  SUCESSFULL,
+  SUCCESSFUL,
   FAILED,
-  REJCTED,
+  REJECTED,
 }
 export enum WebhookStatus {
   PENDING,

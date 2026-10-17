@@ -1,5 +1,6 @@
-import { Prisma } from "../generated/prisma/client";
+import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { Argon2Hasher } from "../lib/argon2";
+import { extractTokenJtiAndRemainingTime } from "../lib/jwt";
 import { RedisClient } from "./urls.repository";
 import { UsersRepository } from "./users.repository";
 
@@ -9,7 +10,7 @@ export class AuthRepository {
   #hasher: Argon2Hasher;
 
   constructor(
-    usersRepoOrDb: UsersRepository | Prisma.TransactionClient,
+    usersRepoOrDb: UsersRepository | PrismaClient,
     redis?: RedisClient,
     hasher?: Argon2Hasher,
   ) {
@@ -58,19 +59,7 @@ export class AuthRepository {
   extractRemainingTimeAndJti(
     token: string,
   ): { jti: string; remainingTime: number } | null {
-    try {
-      const parts = token.split(".");
-      if (parts.length < 2) return null;
-      const payload = JSON.parse(
-        Buffer.from(parts[1], "base64url").toString("utf-8"),
-      );
-      if (!payload.jti || !payload.exp) return null;
-      const nowSeconds = Math.floor(Date.now() / 1000);
-      const remainingTime = Math.max(0, payload.exp - nowSeconds);
-      return { jti: payload.jti, remainingTime };
-    } catch {
-      return null;
-    }
+    return extractTokenJtiAndRemainingTime(token);
   }
 
   async blacklistToken(token: string): Promise<void> {

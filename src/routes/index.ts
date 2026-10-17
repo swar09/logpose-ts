@@ -8,6 +8,7 @@ import { publicRouter } from "./public.routes";
 import { urlsRouter } from "./urls.routes";
 import { usersRouter } from "./users.routes";
 import { webhooksRouter } from "./webhooks.routes";
+import { analyticsRouter } from "./analytics.routes";
 
 export const appRouter = Router();
 
@@ -19,6 +20,7 @@ appRouter.use("/api/v1/urls", urlsRouter);
 appRouter.use("/api/v1/public", publicRouter);
 appRouter.use("/api/v1/billing", billingRouter);
 appRouter.use("/api/v1/webhooks", webhooksRouter);
+appRouter.use("/api/v1/analytics", analyticsRouter);
 
 appRouter.get("/:short_code", analyticsMiddleware, redirectShortCode);
 

@@ -1,5 +1,14 @@
 node_modules
 .env
+.env.*
+!.env.example
 .dist
 /src/generated/prisma
 dist
+
+# Worker ignores
+workers/**/node_modules
+workers/**/dist
+workers/**/.env
+workers/**/.env.*
+!workers/**/.env.example
