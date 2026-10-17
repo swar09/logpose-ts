@@ -1,4 +1,4 @@
-# Log Post: URL Shortener
+# URL Shortener
 
 This is a personal learning project to build a scalable URL shortener with analytics and background workers.
 
